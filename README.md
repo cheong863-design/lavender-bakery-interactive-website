@@ -1,3 +1,5 @@
+Note: This project was developed as part of a university coursework. To meet coursework deadlines, CSS and JavaScript were embedded within individual HTML pages. Future improvements include refactoring the project into a modular structure with separated CSS and JavaScript files.
+
 # 🥐 Lavender Bakery Interactive Website
 
 An interactive bakery website developed as a university team project. The website showcases bakery products through a modern, responsive and user-friendly interface while enhancing customer engagement using interactive design elements.
