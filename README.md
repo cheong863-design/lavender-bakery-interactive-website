@@ -103,11 +103,6 @@ Due to uneven task distribution within the team, I was responsible for the major
 
 ---
 
-### 📱 Responsive Layout
-
-![Responsive](screenshots/responsive.png)
-
----
 
 ## 📚 Learning Outcomes
 
