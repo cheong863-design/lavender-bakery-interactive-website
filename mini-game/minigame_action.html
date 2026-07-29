@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="assets/logo_pic.png">
+  <title>Whack-A-Mole</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@400;600;700&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #a685e2;    /* Richer Lavender */
+      --primary-light: #c4a7f5;
+      --primary-dark: #8363c2;
+      --secondary: #ffe3e0;  /* Pink */
+      --accent: #ffd166;     /* Gold/Yellow for stars */
+      --text: #5a4b6e;
+      --danger: #ff8585;
+      --shadow-color: rgba(166, 133, 226, 0.3);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      
+      background-color: #fff5fd;
+      background-image: radial-gradient(var(--primary-light) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-top: 80px; 
+      font-family: 'Nunito', sans-serif; 
+    }
+
+    /* ================= NAV BAR ================= */
+    .navbar {
+        padding: 16px 30px;
+        background: rgba(255, 255, 255, 0.9); 
+        backdrop-filter: blur(10px); 
+        box-shadow: 0 4px 16px rgba(150, 100, 200, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .navbar-brand {
+        font-family: 'Fredoka', sans-serif;
+        font-weight: 700;
+        color: #5f2c97; 
+    }
+    .nav-link {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;  
+        font-size: 1.1rem; 
+        color: #5f2c97;   
+        transition: 0.3s;
+    }
+    .nav-link:hover {
+        color: #9e54e3;
+        transform: translateY(-2px);
+    }
+
+    main {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px 0;
+        width: 100%;
+    }
+
+    #gameArea {
+      width: 420px;
+      height: 680px;
+      background: linear-gradient(180deg, #fffdfa 0%, #f8f0ff 100%);
+      position: relative;
+      border-radius: 40px;
+      border: 10px solid #fff;
+      box-shadow: 0 30px 70px var(--shadow-color), inset 0 -10px 20px rgba(0,0,0,0.05);
+      overflow: hidden;
+      cursor: none; 
+    }
+
+    /* Subtle floating background elements inside game */
+    #gameArea::before {
+        content: '✨ 🌸 ✨ 🧁';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0.08;
+        font-size: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        align-content: space-around;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    /* --- UI: Score & Timer --- */
+    .ui-panel {
+      position: absolute;
+      top: 30px; left: 25px; right: 25px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .stat-pill {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--text);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* --- 🧺 BASKET PLAYER --- */
+    #player {
+      position: absolute;
+      bottom: 30px; left: 50%;
+      width: 100px; height: 70px;
+      transform: translateX(-50%);
+      z-index: 10;
+      transition: transform 0.05s linear;
+      filter: drop-shadow(0 15px 10px rgba(0,0,0,0.15));
+    }
+    .basket-body {
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(45deg, #d4a373, #d4a373 5px, #c59263 5px, #c59263 10px);
+      border-radius: 10px 10px 35px 35px;
+      border: 4px solid #a87b51;
+      position: relative;
+      overflow: hidden;
+    }
+    .basket-body::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 15px;
+      background: #a87b51; border-bottom: 2px solid #8c6643;
+    }
+    .basket-handle {
+      position: absolute; top: -35px; left: 10%; width: 80%; height: 50px;
+      border-radius: 50px 50px 0 0;
+      border: 6px solid #a87b51; border-bottom: none;
+      z-index: -1;
+    }
+    .basket-bow {
+        position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+        font-size: 24px; color: var(--primary);
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+    }
+
+    /* --- Falling Items --- */
+    .item {
+      position: absolute;
+      font-size: 3.2rem;
+      top: -70px;
+      filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+      animation: spin 3.5s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- Particle Effects --- */
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: popFade 0.6s forwards;
+    }
+    @keyframes popFade {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+
+    /* --- Overlays & Cards --- */
+    .overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(12px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 30; padding: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px 30px;
+      border-radius: 35px;
+      box-shadow: 0 25px 50px var(--shadow-color);
+      border: 4px solid #fff;
+      text-align: center;
+      max-width: 340px;
+      animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.8) translateY(30px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .card h1 { color: var(--primary-dark); margin: 5px 0; font-size: 2.2rem; font-weight: 800; font-family: 'Fredoka', sans-serif; }
+    .card p { color: #887a9c; margin: 0 0 25px 0; font-weight: 700; font-size: 1.1rem; }
+
+    /* --- Buttons --- */
+    .game-btn {
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      color: white;
+      border: none;
+      padding: 16px 45px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 800;
+      box-shadow: 0 10px 25px var(--shadow-color), inset 0 -3px 5px rgba(0,0,0,0.1);
+      transition: all 0.15s;
+    }
+    .game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px var(--shadow-color), inset 0 -3px 5px rgba(0,0,0,0.1);
+      filter: brightness(1.05);
+    }
+    .game-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 5px 10px var(--shadow-color), inset 0 3px 5px rgba(0,0,0,0.1);
+    }
+
+    /* --- End Screen Specifics --- */
+    .score-container {
+        background: #fcf6ff;
+        border: 3px dashed var(--primary-light);
+        border-radius: 25px;
+        padding: 20px 10px;
+        margin: 20px 0;
+    }
+    .big-score {
+        font-size: 4rem; margin: 0; font-weight: 900;
+        background: linear-gradient(45deg, var(--primary-dark), var(--primary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 3px 3px rgba(0,0,0,0.1));
+    }
+    .baker-rank {
+        background: var(--secondary); color: var(--text);
+        padding: 8px 20px; border-radius: 50px;
+        font-weight: 800; display: inline-block; margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(255, 227, 224, 0.6);
+    }
+
+    /* --- Floating Text & Flash --- */
+    .float-score {
+      position: absolute; font-weight: 900; font-size: 1.8rem;
+      animation: floatUp 0.8s forwards; pointer-events: none;
+      z-index: 15;
+      text-shadow: 2px 2px 0px #fff, -2px -2px 0px #fff, 2px -2px 0px #fff, -2px 2px 0px #fff;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.5); opacity: 0; }
+      30% { transform: translateY(-20px) scale(1.3); opacity: 1; }
+      100% { transform: translateY(-60px) scale(1); opacity: 0; }
+    }
+
+    .flash-red { animation: flash 0.4s; }
+    @keyframes flash {
+      0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+      50% { box-shadow: inset 0 0 80px 30px var(--danger); }
+    }
+
+    .hidden { display: none !important; }
+
+    /* ================= FOOTER ================= */
+    footer {
+        text-align: center;
+        padding: 35px 0;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid #e5caff;
+        color: #5f2c97;
+        width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+        <nav class="navbar navbar-expand-lg fixed-top">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="homepage.html">
+                    <img src="assets/logo_pic.png" width="40" height="40" class="me-2 d-inline-block align-text-top" alt="">
+                    Lavender Bakery
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse justify-content-end" id="navMenu">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="../homepage.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../homepage.html#character">Character</a></li>
+                                                <li class="nav-item"><a class="nav-link" href="../homepage.html#minigame">Minigame</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../homepage.html#portfolio">Portfolio</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../homepage.html#about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+  <main>
+      <div id="gameArea">
+        <div class="atmos"></div>
+
+        <div class="ui-panel">
+          <div class="stat-pill">✨ <span id="score">0</span></div>
+          <div class="stat-pill">⏳ <span id="time">30</span>s</div>
+        </div>
+
+        <div id="player">
+            <div class="basket-handle"></div>
+            <div class="basket-body">
+                <div class="basket-bow">🎀</div>
+            </div>
+        </div>
+
+        <div id="startScreen" class="overlay">
+          <div class="card">
+            <div style="font-size: 5rem; margin-bottom: 10px; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));">🧁</div>
+            <h1>Lavender Bakery</h1>
+            <p>Catch the fresh sweets!<br>Avoid the burnt toast.</p>
+            <button class="game-btn" onclick="startGame()">Start Baking</button>
+          </div>
+        </div>
+
+        <div id="endScreen" class="overlay hidden">
+          <div class="card">
+            <div style="font-size: 5rem; margin-bottom: 5px;">🏆</div>
+            <h1>Time's Up!</h1>
+            <p style="margin-bottom: 10px;">Final Tally:</p>
+            
+            <div class="score-container">
+                <h2 id="finalScore" class="big-score">0</h2>
+            </div>
+
+            <div><span class="baker-rank">👩‍🍳 Rank: Master Baker</span></div>
+            
+            <button class="game-btn" onclick="location.reload()">Bake Again!</button>
+          </div>
+        </div>
+      </div>
+  </main>
+
+  <footer>
+    <div class="container">
+        <div class="mb-3 fw-bold" style="font-family: 'Fredoka', sans-serif; letter-spacing: 1px;">© 2025 Lavender Bakery. All Rights Reserved.</div>
+    </div>
+  </footer>
+
+  <audio id="sndCatch" src="assets/Mario Coin Sound - Sound Effect (HD).mp3"></audio>
+  <audio id="sndToast" src="assets/Something being hit - Sound Effect.mp3"></audio>
+  <audio id="sndEnd"   src="assets/Victory Sound Effect.mp3"></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // --- Configuration ---
+    const gameArea = document.getElementById('gameArea');
+    const player = document.getElementById('player');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const audioCatch = document.getElementById('sndCatch');
+    const audioToast = document.getElementById('sndToast');
+    const audioEnd = document.getElementById('sndEnd');
+
+    let score = 0;
+    let timeLeft = 30;
+    let gameInterval, spawnInterval;
+    let isPlaying = false;
+    let items = [];
+    
+    // Items Configuration
+    const dropItems = [
+      { icon: '🧁', val: 10, type: 'good', color: '#a685e2' },
+      { icon: '🥐', val: 15, type: 'good', color: '#d4a373' },
+      { icon: '🍩', val: 20, type: 'good', color: '#f28b82' },
+      { icon: '🍰', val: 25, type: 'good', color: '#f7bedf' },
+      { icon: '🍞', val: -50, type: 'bad', color: '#5a4b6e' } // Burnt Toast
+    ];
+
+    // --- Controls ---
+    gameArea.addEventListener('mousemove', (e) => {
+      if (!isPlaying) return;
+      const rect = gameArea.getBoundingClientRect();
+      let x = e.clientX - rect.left; 
+      if (x < 50) x = 50; if (x > 370) x = 370;
+      player.style.left = x + 'px';
+    });
+
+    // --- Game Logic ---
+    function startGame() {
+      document.getElementById('startScreen').classList.add('hidden');
+      isPlaying = true; score = 0; timeLeft = 30;
+      updateUI();
+      gameInterval = setInterval(gameLoop, 20); 
+      spawnInterval = setInterval(spawnItem, 700);
+      
+      const timer = setInterval(() => {
+        timeLeft--;
+        updateUI();
+        if (timeLeft <= 0) { clearInterval(timer); endGame(); }
+      }, 1000);
+    }
+
+    function updateUI() {
+        scoreEl.innerText = score;
+        timeEl.innerText = timeLeft;
+    }
+
+    function spawnItem() {
+      if (!isPlaying) return;
+      const randomItem = dropItems[Math.floor(Math.random() * dropItems.length)];
+      const el = document.createElement('div');
+      el.classList.add('item');
+      el.innerText = randomItem.icon;
+      el.dataset.val = randomItem.val;
+      el.dataset.type = randomItem.type;
+      el.dataset.color = randomItem.color; 
+      
+      const randomX = Math.floor(Math.random() * 320) + 50;
+      el.style.left = randomX + 'px'; el.style.top = '-70px';
+      el.style.animationDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
+      
+      gameArea.appendChild(el);
+      items.push({ el: el, y: -70, speed: Math.random() * 3 + 3 }); 
+    }
+
+    function gameLoop() {
+      if (!isPlaying) return;
+      items.forEach((itemObj, index) => {
+        itemObj.y += itemObj.speed;
+        itemObj.el.style.top = itemObj.y + 'px';
+        const playerRect = player.getBoundingClientRect();
+        const itemRect = itemObj.el.getBoundingClientRect();
+
+        if (
+          itemRect.bottom >= playerRect.top + 40 &&
+          itemRect.top <= playerRect.bottom - 10 &&
+          itemRect.right >= playerRect.left + 20 &&
+          itemRect.left <= playerRect.right - 20
+        ) { catchItem(itemObj, index); }
+        else if (itemObj.y > 680) {
+          itemObj.el.remove(); items.splice(index, 1);
+        }
+      });
+    }
+
+    function playAudio(audioElement) {
+      if(audioElement && audioElement.src) {
+        audioElement.currentTime = 0;
+        audioElement.play().catch(() => {});
+      }
+    }
+
+    function catchItem(itemObj, index) {
+      const val = parseInt(itemObj.el.dataset.val);
+      const type = itemObj.el.dataset.type;
+      const color = itemObj.el.dataset.color;
+      
+      score += val; if(score < 0) score = 0;
+      updateUI();
+
+      const rect = itemObj.el.getBoundingClientRect();
+      const gameRect = gameArea.getBoundingClientRect();
+      const xPos = rect.left - gameRect.left + rect.width/2;
+      const yPos = rect.top - gameRect.top + rect.height/2;
+
+      if (type === 'good') {
+        playAudio(audioCatch);
+        spawnParticles(xPos, yPos, color, 'sparkle');
+      } else {
+        playAudio(audioToast);
+        spawnParticles(xPos, yPos, '#5a4b6e', 'smoke');
+        gameArea.classList.add('flash-red');
+        setTimeout(() => gameArea.classList.remove('flash-red'), 300);
+      }
+
+      showFloatingText(val, yPos, xPos);
+
+      itemObj.el.remove(); items.splice(index, 1);
+    }
+
+    function spawnParticles(x, y, color, type) {
+        const count = type === 'sparkle' ? 8 : 5;
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.classList.add('particle');
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            p.style.background = color;
+            
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 60 + 40;
+            const tx = Math.cos(angle) * velocity;
+            const ty = Math.sin(angle) * velocity - 50; 
+            
+            p.animate([
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+            ], { duration: 600, easing: 'ease-out' });
+            
+            gameArea.appendChild(p);
+            setTimeout(() => p.remove(), 600);
+        }
+    }
+
+    function showFloatingText(val, y, x) {
+      const el = document.createElement('div');
+      el.classList.add('float-score');
+      el.innerText = val > 0 ? `+${val}` : val;
+      el.style.color = val > 0 ? '#a685e2' : '#ff8585';
+      el.style.top = (y - 20) + 'px'; el.style.left = x + 'px';
+      gameArea.appendChild(el); setTimeout(() => el.remove(), 800);
+    }
+
+    function endGame() {
+      isPlaying = false; clearInterval(gameInterval); clearInterval(spawnInterval);
+      playAudio(audioEnd);
+      document.getElementById('finalScore').innerText = score;
+      document.getElementById('endScreen').classList.remove('hidden');
+      items.forEach(i => i.el.remove()); items = [];
+    }
+  </script>
+</body>
+</html>
